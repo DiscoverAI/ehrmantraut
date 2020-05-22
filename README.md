@@ -1,6 +1,16 @@
-# Tuco
-> "Tight! Tight tight, yeah!"
+# Ehrmantraut
+> "You know, Walter, sometimes it doesn't hurt to have someone watching your back."
 >
-> -- Alberto "Tuco" Salamanca (Breaking Bad)
+> -- Michael "Mike" Ehrmantraut (Breaking Bad)
 
-Experiment tracking for computational drug design
+Experiment tracking for computational drug design.
+
+## Install
+```bash
+pipenv install
+```
+
+## Run
+```bash
+pipenv run start
+```

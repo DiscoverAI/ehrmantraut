@@ -13,4 +13,4 @@ boto3 = "*"
 python_version = "3.7"
 
 [scripts]
-start = "mlflow server --backend-store-uri ./.mlflow --default-artifact-root s3://sars-cov-2-25309b4013524 --host 0.0.0.0"
+start = "mlflow server --backend-store-uri ./mlflow --default-artifact-root s3://sars-cov-2-25309b4013524 --host 0.0.0.0"

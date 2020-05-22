@@ -1,4 +1,0 @@
-artifact_location: s3://sars-cov-2-25309b4013524/2
-experiment_id: '2'
-lifecycle_stage: active
-name: sars-cov-2

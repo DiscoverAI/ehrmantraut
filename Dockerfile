@@ -7,4 +7,4 @@ COPY Pipfile Pipfile.lock ./
 RUN pipenv lock --requirements > requirements.txt && pip install -r ./requirements.txt
 RUN chown -R "$USER":"$USER" /usr/src/app
 USER $USER
-CMD mlflow server --backend-store-uri ./mlflow --default-artifact-root s3://sars-cov-2-25309b4013524 --host 0.0.0.0
+CMD mlflow server --backend-store-uri ./mlflow --default-artifact-root $DATALAKE --host 0.0.0.0

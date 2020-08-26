@@ -1,0 +1,99 @@
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Name of the project this belongs to
+  VPCStackName:
+    Type: String
+    Description: The name of the VPC Stack
+Resources:
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      PermissionsBoundary: !Sub "arn:aws:iam::${AWS::AccountId}:policy/DeveloperBoundary"
+      RoleName: "ehrmantraut"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+      AssumeRolePolicyDocument:
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+          {
+            "Sid": "",
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "ec2.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+          }
+          ]
+        }
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+      Policies:
+        - PolicyName: EhrmantrautECRPull
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                Resource:
+                  - !Sub "arn:aws:ecr:eu-central-1:${AWS::AccountId}:repository/ehrmantraut"
+              - Effect: Allow
+                Action:
+                  - "ecr:GetAuthorizationToken"
+                Resource:
+                  - "*"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref InstanceRole
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: "ehrmantraut"
+      AvailabilityZone: "eu-central-1a"
+      ImageId: ami-0c115dbd34c69a004
+      InstanceType: "t2.small"
+      IamInstanceProfile: !Ref InstanceProfile
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      SubnetId:
+        Fn::ImportValue:
+          !Join ['-', [!Ref 'VPCStackName', 'PrivateSubnet1']]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -ex
+
+          sudo mkdir /root/.docker
+          sudo bash -c 'cat > /root/.docker/config.json' << EOF
+          {
+            "credsStore": "ecr-login"
+          }
+          EOF
+
+          sudo amazon-linux-extras enable docker
+          sudo yum install -y docker amazon-ecr-credential-helper jq
+          sudo service docker start
+          docker run -d -p 5000:5000 "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/ehrmantraut"
+
+
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow traffic out
+      VpcId:
+        Fn::ImportValue:
+          !Join ['-', [!Ref 'VPCStackName', 'VPC']]
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          FromPort: 0
+          ToPort: 0
+          CidrIp: 0.0.0.0/0

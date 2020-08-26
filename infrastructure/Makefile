@@ -115,6 +115,39 @@ update-ehrmantraut-on-ecr:
 		--region $(region) \
 		--profile $(developer_profile)
 
+.PHONY: ehrmantraut-on-ec2-template-test
+ehrmantraut-on-ec2-template-test:
+	aws cloudformation validate-template --profile $(developer_profile) --region $(region) --template-body file://./ehrmantraut-on-ec2.yaml >> /dev/null
+
+.PHONY: ehrmantraut-on-ec2
+ehrmantraut-on-ec2:
+	aws cloudformation deploy \
+		--template-file ehrmantraut-on-ec2.yaml \
+		--stack-name "$(project_name)-ehrmantraut-on-ec2" \
+		--region $(region) \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --profile $(developer_profile) \
+		--parameter-overrides ProjectName=$(project_name) VPCStackName="$(project_name)-vpc"
+
+.PHONY: update-ehrmantraut-on-ec2
+update-ehrmantraut-on-ec2:
+	aws cloudformation create-change-set \
+		--change-set-name "$(project_name)-ehrmantraut-on-ec2-${now}" \
+		--change-set-type UPDATE \
+		--template-body file://./ehrmantraut-on-ec2.yaml \
+		--stack-name "$(project_name)-ehrmantraut-on-ec2" \
+		--region $(region) \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--profile $(developer_profile) \
+		--parameters ParameterKey=ProjectName,ParameterValue=$(project_name) ParameterKey=VPCStackName,ParameterValue="$(project_name)-vpc"
+
+	sleep $(wait_for_status_change)
+
+	aws cloudformation execute-change-set \
+		--change-set-name "$(project_name)-ehrmantraut-on-ec2-${now}" \
+		--stack-name "$(project_name)-ehrmantraut-on-ec2" \
+		--region $(region) \
+		--profile $(developer_profile)
 
 .PHONY: infrastructure
 infrastructure: ehrmantraut-on-fargate  ehrmantraut-on-ecr

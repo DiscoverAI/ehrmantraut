@@ -72,7 +72,7 @@ Resources:
     Properties:
       AvailabilityZone: !Join ['', [!Ref 'Region', 'a']]
       ImageId: ami-0c115dbd34c69a004
-      InstanceType: "t2.small"
+      InstanceType: "t2.medium"
       IamInstanceProfile: !Ref InstanceProfile
       SecurityGroupIds:
         - !Ref InstanceSecurityGroup

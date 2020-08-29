@@ -1,0 +1,43 @@
+version: 2.1
+
+python-docker-image: &python-docker-image
+  working_directory: ~/repo
+  docker:
+    - image: circleci/python:3.6
+      environment:
+        PIPENV_VENV_IN_PROJECT: true
+
+jobs:
+  build:
+    <<: *python-docker-image
+    steps:
+      - checkout
+      - run: mkdir image
+      - run: cp Dockerfile ./image/ && cp README.md ./image/
+      - persist_to_workspace:
+          root: ~/repo/
+          paths:
+            - image
+
+  release-image:
+    machine: true
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Build and push container
+          command: |
+            cd ~/repo/image
+            echo "$DOCKER_PASS" | docker login --username $DOCKER_USER --password-stdin
+            docker build -t meandor/ehrmantraut:$CIRCLE_SHA1 .
+            docker tag meandor/ehrmantraut:$CIRCLE_SHA1 meandor/ehrmantraut:latest
+            docker push meandor/ehrmantraut:$CIRCLE_SHA1
+            docker push meandor/ehrmantraut:latest
+
+workflows:
+  test-build-release:
+    jobs:
+      - build
+      - release-image:
+          requires:
+            - build

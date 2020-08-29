@@ -11,16 +11,21 @@ Parameters:
   Region:
     Type: String
     Description: Region
+  ModuleName:
+    Type: String
+    Description: Module Name
 
 Resources:
   InstanceRole:
     Type: AWS::IAM::Role
     Properties:
       PermissionsBoundary: !Sub "arn:aws:iam::${AWS::AccountId}:policy/DeveloperBoundary"
-      RoleName: "ehrmantraut"
+      RoleName: !Ref ModuleName
       Tags:
         - Key: Project
           Value: !Ref ProjectName
+        - Key: Module
+          Value: !Ref ModuleName
       AssumeRolePolicyDocument:
         {
           "Version": "2012-10-17",
@@ -38,7 +43,7 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       Policies:
-        - PolicyName: EhrmantrautECRPull
+        - PolicyName: !Sub "${ModuleName}ECRPull"
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -48,7 +53,7 @@ Resources:
                   - "ecr:GetDownloadUrlForLayer"
                   - "ecr:BatchGetImage"
                 Resource:
-                  - !Sub "arn:aws:ecr:eu-central-1:${AWS::AccountId}:repository/ehrmantraut"
+                  - !Sub "arn:aws:ecr:eu-central-1:${AWS::AccountId}:repository/${ModuleName}"
               - Effect: Allow
                 Action:
                   - "ecr:GetAuthorizationToken"
@@ -59,7 +64,6 @@ Resources:
     Properties:
       Roles:
         - !Ref InstanceRole
-
   Instance:
     Type: AWS::EC2::Instance
     Properties:
@@ -74,7 +78,7 @@ Resources:
           !Join ['-', [!Ref 'VPCStackName', 'PrivateSubnet1']]
       Tags:
         - Key: "Name"
-          Value: "ehrmantraut"
+          Value: !Join ['-', [!Ref 'ProjectName', !Ref 'ModuleName']]
       UserData:
         Fn::Base64: !Sub
           - |
@@ -92,10 +96,21 @@ Resources:
             sudo yum install -y docker amazon-ecr-credential-helper jq
             sudo service docker start
 
+            sudo bash -c 'cat >> /etc/rc.local' << EOF
+            #!/bin/bash
+            sudo service docker start
             docker run -d -p 80:5000 \
               -e "AWS_DEFAULT_REGION=${Region}" \
               -e "DATALAKE=${DataLakeArn}" \
-              "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/ehrmantraut"
+              "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/${ModuleName}"
+            EOF
+
+            chmod +x /etc/rc.local
+
+            docker run -d -p 80:5000 \
+              -e "AWS_DEFAULT_REGION=${Region}" \
+              -e "DATALAKE=${DataLakeArn}" \
+              "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/${ModuleName}"
           - DataLakeArn:
               Fn::ImportValue:
                 !Join ['-', [!Ref 'DataLakeStackName', 'Arn']]
@@ -105,8 +120,8 @@ Resources:
       HostedZoneId:
         Fn::ImportValue:
           !Join ['-', [!Ref 'VPCStackName', 'HostedZoneID']]
-      Comment: DNS record for EhrmanTraut
-      Name: ehrmantraut.sars-cov2.local
+      Comment: !Sub "DNS record for ${ProjectName} ${ModuleName}"
+      Name: !Sub "${ModuleName}.sars-cov2.local"
       Type: A
       TTL: '900'
       ResourceRecords:
@@ -130,7 +145,7 @@ Resources:
           CidrIp: 0.0.0.0/0
 Outputs:
   DNSRecordName:
-    Description: A reference the DNS Name for Ehrmann Traut
+    Description: The DNS Record Name that the service can be reached at
     Value: !Ref DNSRecord
     Export:
       Name: !Sub '${AWS::StackName}-DNSRecord'

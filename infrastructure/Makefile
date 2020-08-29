@@ -127,7 +127,7 @@ ehrmantraut-on-ec2:
 		--region $(region) \
         --capabilities CAPABILITY_NAMED_IAM \
         --profile $(developer_profile) \
-		--parameter-overrides ProjectName=$(project_name) VPCStackName="$(project_name)-vpc"
+		--parameter-overrides ProjectName=$(project_name) VPCStackName="$(project_name)-vpc" DataLakeStackName="$(project_name)-datalake"
 
 .PHONY: update-ehrmantraut-on-ec2
 update-ehrmantraut-on-ec2:
@@ -139,7 +139,7 @@ update-ehrmantraut-on-ec2:
 		--region $(region) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--profile $(developer_profile) \
-		--parameters ParameterKey=ProjectName,ParameterValue=$(project_name) ParameterKey=VPCStackName,ParameterValue="$(project_name)-vpc"
+		--parameters ParameterKey=ProjectName,ParameterValue=$(project_name) ParameterKey=VPCStackName,ParameterValue="$(project_name)-vpc" ParameterKey=DataLakeStackName,ParameterValue="$(project_name)-datalake"
 
 	sleep $(wait_for_status_change)
 

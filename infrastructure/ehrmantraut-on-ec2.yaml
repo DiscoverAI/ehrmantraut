@@ -5,6 +5,9 @@ Parameters:
   VPCStackName:
     Type: String
     Description: The name of the VPC Stack
+  DataLakeStackName:
+    Type: String
+    Description: The export name of the DataLake Stack
 Resources:
   InstanceRole:
     Type: AWS::IAM::Role
@@ -67,23 +70,29 @@ Resources:
         Fn::ImportValue:
           !Join ['-', [!Ref 'VPCStackName', 'PrivateSubnet1']]
       UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
-          set -ex
+        Fn::Base64: !Sub
+          - |
+            #!/bin/bash
+            set -ex
 
-          sudo mkdir /root/.docker
-          sudo bash -c 'cat > /root/.docker/config.json' << EOF
-          {
-            "credsStore": "ecr-login"
-          }
-          EOF
+            sudo mkdir /root/.docker
+            sudo bash -c 'cat > /root/.docker/config.json' << EOF
+            {
+              "credsStore": "ecr-login"
+            }
+            EOF
 
-          sudo amazon-linux-extras enable docker
-          sudo yum install -y docker amazon-ecr-credential-helper jq
-          sudo service docker start
-          docker run -d -p 5000:5000 "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/ehrmantraut"
+            sudo amazon-linux-extras enable docker
+            sudo yum install -y docker amazon-ecr-credential-helper jq
+            sudo service docker start
 
-
+            docker run -d -p 5000:5000 \
+              -e "AWS_DEFAULT_REGION=eu-central-1" \
+              -e "DATALAKE=${DataLakeArn}" \
+              "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/ehrmantraut"
+          - DataLakeArn:
+              Fn::ImportValue:
+                !Join ['-', [!Ref 'DataLakeStackName', 'Arn']]
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup

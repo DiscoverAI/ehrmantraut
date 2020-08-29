@@ -127,7 +127,7 @@ ehrmantraut-on-ec2:
 		--region $(region) \
         --capabilities CAPABILITY_NAMED_IAM \
         --profile $(developer_profile) \
-		--parameter-overrides ProjectName=$(project_name) VPCStackName="$(project_name)-vpc" DataLakeStackName="$(project_name)-datalake"
+		--parameter-overrides ProjectName=$(project_name) VPCStackName="$(project_name)-vpc" DataLakeStackName="$(project_name)-datalake" Region="$(region)"
 
 .PHONY: update-ehrmantraut-on-ec2
 update-ehrmantraut-on-ec2:
@@ -139,7 +139,7 @@ update-ehrmantraut-on-ec2:
 		--region $(region) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--profile $(developer_profile) \
-		--parameters ParameterKey=ProjectName,ParameterValue=$(project_name) ParameterKey=VPCStackName,ParameterValue="$(project_name)-vpc" ParameterKey=DataLakeStackName,ParameterValue="$(project_name)-datalake"
+		--parameters ParameterKey=ProjectName,ParameterValue=$(project_name) ParameterKey=VPCStackName,ParameterValue="$(project_name)-vpc" ParameterKey=DataLakeStackName,ParameterValue="$(project_name)-datalake" ParameterKey=Region,ParameterValue="$(region)"
 
 	sleep $(wait_for_status_change)
 
@@ -149,8 +149,43 @@ update-ehrmantraut-on-ec2:
 		--region $(region) \
 		--profile $(developer_profile)
 
+.PHONY: bastion-template-test
+bastion-template-test:
+	aws cloudformation validate-template --profile $(developer_profile) --region $(region) --template-body file://./bastion-host.yaml >> /dev/null
+
+.PHONY: update-bastion
+update-bastion:
+	aws cloudformation create-change-set \
+		--change-set-name "$(project_name)-bastion-${now}" \
+		--change-set-type UPDATE \
+		--template-body file://./bastion-host.yaml \
+		--stack-name "$(project_name)-bastion" \
+		--region $(region) \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--profile $(developer_profile) \
+		--parameters ParameterKey=ProjectName,ParameterValue=$(project_name) ParameterKey=VPCStackName,ParameterValue="$(project_name)-vpc" ParameterKey=Region,ParameterValue="$(region)"
+
+	sleep $(wait_for_status_change)
+
+	aws cloudformation execute-change-set \
+		--change-set-name "$(project_name)-bastion-${now}" \
+		--stack-name "$(project_name)-bastion" \
+		--region $(region) \
+		--profile $(developer_profile)
+
+.PHONY: bastion
+bastion:
+	aws cloudformation deploy \
+		--template-file bastion-host.yaml \
+		--stack-name "$(project_name)-bastion" \
+		--region $(region) \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --profile $(developer_profile) \
+		--parameter-overrides ProjectName=$(project_name) VPCStackName="$(project_name)-vpc" Region="$(region)"
+
+
 .PHONY: infrastructure
-infrastructure: ehrmantraut-on-fargate  ehrmantraut-on-ecr
+infrastructure: ehrmantraut-on-ec2
 
 .PHONY: template-test
-template-test: ehrmantraut-on-fargate-template-test ehrmantraut-on-ecr-template-test
+template-test: ehrmantraut-on-ec2-template-test

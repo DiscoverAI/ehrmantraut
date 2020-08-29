@@ -8,6 +8,10 @@ Parameters:
   DataLakeStackName:
     Type: String
     Description: The export name of the DataLake Stack
+  Region:
+    Type: String
+    Description: Region
+
 Resources:
   InstanceRole:
     Type: AWS::IAM::Role
@@ -50,17 +54,16 @@ Resources:
                   - "ecr:GetAuthorizationToken"
                 Resource:
                   - "*"
-
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Roles:
         - !Ref InstanceRole
+
   Instance:
     Type: AWS::EC2::Instance
     Properties:
-      KeyName: "ehrmantraut"
-      AvailabilityZone: "eu-central-1a"
+      AvailabilityZone: !Join ['', [!Ref 'Region', 'a']]
       ImageId: ami-0c115dbd34c69a004
       InstanceType: "t2.small"
       IamInstanceProfile: !Ref InstanceProfile
@@ -69,6 +72,9 @@ Resources:
       SubnetId:
         Fn::ImportValue:
           !Join ['-', [!Ref 'VPCStackName', 'PrivateSubnet1']]
+      Tags:
+        - Key: "Name"
+          Value: "ehrmantraut"
       UserData:
         Fn::Base64: !Sub
           - |
@@ -86,14 +92,25 @@ Resources:
             sudo yum install -y docker amazon-ecr-credential-helper jq
             sudo service docker start
 
-            docker run -d -p 5000:5000 \
-              -e "AWS_DEFAULT_REGION=eu-central-1" \
+            docker run -d -p 80:5000 \
+              -e "AWS_DEFAULT_REGION=${Region}" \
               -e "DATALAKE=${DataLakeArn}" \
               "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/ehrmantraut"
           - DataLakeArn:
               Fn::ImportValue:
                 !Join ['-', [!Ref 'DataLakeStackName', 'Arn']]
-
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId:
+        Fn::ImportValue:
+          !Join ['-', [!Ref 'VPCStackName', 'HostedZoneID']]
+      Comment: DNS record for EhrmanTraut
+      Name: ehrmantraut.sars-cov2.local
+      Type: A
+      TTL: '900'
+      ResourceRecords:
+        - !GetAtt Instance.PrivateIp
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -106,3 +123,14 @@ Resources:
           FromPort: 0
           ToPort: 0
           CidrIp: 0.0.0.0/0
+      SecurityGroupIngress:
+        - IpProtocol: "tcp"
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+Outputs:
+  DNSRecordName:
+    Description: A reference the DNS Name for Ehrmann Traut
+    Value: !Ref DNSRecord
+    Export:
+      Name: !Sub '${AWS::StackName}-DNSRecord'

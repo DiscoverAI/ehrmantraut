@@ -62,6 +62,25 @@ Resources:
                   - "ecr:GetAuthorizationToken"
                 Resource:
                   - "*"
+        - PolicyName: !Sub "${ModuleName}ReadDataLake"
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - Fn::ImportValue:
+                      !Sub "${DataLakeStackName}-Arn"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - Fn::Join:
+                      - ""
+                      - - Fn::ImportValue:
+                            !Sub "${DataLakeStackName}-Arn"
+                        - "/*"
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -72,7 +91,7 @@ Resources:
     Properties:
       AvailabilityZone: !Join ['', [!Ref 'Region', 'a']]
       ImageId: ami-0c115dbd34c69a004
-      InstanceType: "t2.medium"
+      InstanceType: "t3.small"
       IamInstanceProfile: !Ref InstanceProfile
       SecurityGroupIds:
         - !Ref InstanceSecurityGroup

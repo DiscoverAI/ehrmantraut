@@ -14,6 +14,9 @@ Parameters:
   ModuleName:
     Type: String
     Description: Module Name
+  ApplicationPort:
+    Type: String
+    Description: The Application's natural port
 
 Resources:
   InstanceRole:
@@ -96,18 +99,7 @@ Resources:
             sudo yum install -y docker amazon-ecr-credential-helper jq
             sudo service docker start
 
-            sudo bash -c 'cat >> /etc/rc.local' << EOF
-            #!/bin/bash
-            sudo service docker start
-            docker run -d -p 80:5000 \
-              -e "AWS_DEFAULT_REGION=${Region}" \
-              -e "DATALAKE=${DataLakeArn}" \
-              "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/${ModuleName}"
-            EOF
-
-            chmod +x /etc/rc.local
-
-            docker run -d -p 80:5000 \
+            docker run -d -p 80:${ApplicationPort} \
               -e "AWS_DEFAULT_REGION=${Region}" \
               -e "DATALAKE=${DataLakeArn}" \
               "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/${ModuleName}"

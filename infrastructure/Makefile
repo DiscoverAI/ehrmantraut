@@ -15,29 +15,29 @@ now := $(shell date +%s)
 
 .PHONY: ehrmantraut-on-ec2-template-test
 ehrmantraut-on-ec2-template-test:
-	aws cloudformation validate-template --profile $(developer_profile) --region $(region) --template-body "file://./$(module_name)-on-ec2.yaml" >> /dev/null
+	aws cloudformation validate-template --profile $(developer_profile) --region $(region) --template-body "file://./application-on-ec2.yaml" >> /dev/null
 
 .PHONY: ehrmantraut-on-ec2
 ehrmantraut-on-ec2:
 	aws cloudformation deploy \
-		--template-file "$(module_name)-on-ec2.yaml" \
+		--template-file "application-on-ec2.yaml" \
 		--stack-name "$(project_name)-$(module_name)-on-ec2" \
 		--region $(region) \
         --capabilities CAPABILITY_NAMED_IAM \
         --profile $(developer_profile) \
-		--parameter-overrides ProjectName=$(project_name) ModuleName=$(module_name) VPCStackName="$(project_name)-vpc" DataLakeStackName="$(project_name)-datalake" Region="$(region)"
+		--parameter-overrides ProjectName=$(project_name) ModuleName=$(module_name) VPCStackName="$(project_name)-vpc" DataLakeStackName="$(project_name)-datalake" Region="$(region)" ApplicationPort="5000"
 
 .PHONY: update-ehrmantraut-on-ec2
 update-ehrmantraut-on-ec2:
 	aws cloudformation create-change-set \
 		--change-set-name "$(project_name)-$(module_name)-on-ec2-${now}" \
 		--change-set-type UPDATE \
-		--template-body "file://./$(module_name)-on-ec2.yaml" \
+		--template-body "file://./application-on-ec2.yaml" \
 		--stack-name "$(project_name)-$(module_name)-on-ec2" \
 		--region $(region) \
 		--capabilities CAPABILITY_NAMED_IAM \
 		--profile $(developer_profile) \
-		--parameters ParameterKey=ProjectName,ParameterValue=$(project_name) ParameterKey=ModuleName,ParameterValue=$(module_name) ParameterKey=VPCStackName,ParameterValue="$(project_name)-vpc" ParameterKey=DataLakeStackName,ParameterValue="$(project_name)-datalake" ParameterKey=Region,ParameterValue="$(region)"
+		--parameters ParameterKey=ProjectName,ParameterValue=$(project_name) ParameterKey=ModuleName,ParameterValue=$(module_name) ParameterKey=VPCStackName,ParameterValue="$(project_name)-vpc" ParameterKey=DataLakeStackName,ParameterValue="$(project_name)-datalake" ParameterKey=Region,ParameterValue="$(region)" ParameterKey=ApplicationPort,ParameterValue="5000"
 
 	sleep $(wait_for_status_change)
 

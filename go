@@ -30,6 +30,20 @@ goal_run-ehrmantraut() {
   popd > /dev/null
 }
 
+goal_start-session() {
+ pushd "${script_dir}" > /dev/null
+    check_prerequisites
+    instance_id=$(aws ec2 describe-instances \
+               --profile tortugas-developer \
+               --region eu-central-1 \
+               --filter "Name=tag:Name,Values=sars-cov-2-ehrmantraut" \
+               --query "Reservations[].Instances[?State.Name == 'running'].InstanceId[]" \
+               --output text)
+    aws ssm start-session --target $instance_id \
+      --profile tortugas-developer \
+      --region eu-central-1
+  popd > /dev/null
+}
 
 TARGET=${1:-}
 if type -t "goal_${TARGET}" &>/dev/null; then
@@ -39,6 +53,7 @@ else
 
 goal:
     run-ehrmantraut             - Port Forwards MLFlow to localhost:9999
+    start-session               - Starts a Systems Manager session
 "
   exit 1
 fi

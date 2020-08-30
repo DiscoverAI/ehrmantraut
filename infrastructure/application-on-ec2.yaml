@@ -132,7 +132,7 @@ Resources:
         Fn::ImportValue:
           !Join ['-', [!Ref 'VPCStackName', 'HostedZoneID']]
       Comment: !Sub "DNS record for ${ProjectName} ${ModuleName}"
-      Name: !Sub "${ModuleName}.sars-cov2.local"
+      Name: !Sub "${ModuleName}.${ProjectName}.local"
       Type: A
       TTL: '900'
       ResourceRecords:

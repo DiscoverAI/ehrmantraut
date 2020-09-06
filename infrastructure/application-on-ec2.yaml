@@ -74,6 +74,7 @@ Resources:
                       !Sub "${DataLakeStackName}-Arn"
               - Effect: Allow
                 Action:
+                  - s3:PutObject
                   - s3:GetObject
                 Resource:
                   - Fn::Join:
@@ -120,11 +121,11 @@ Resources:
 
             docker run -d -p 80:${ApplicationPort} \
               -e "AWS_DEFAULT_REGION=${Region}" \
-              -e "DATALAKE=${DataLakeArn}" \
+              -e "DATALAKE=${DataLakeAddress}" \
               "$(curl http://169.254.169.254/latest/dynamic/instance-identity/document | jq .accountId -r).dkr.ecr.eu-central-1.amazonaws.com/${ModuleName}"
-          - DataLakeArn:
+          - DataLakeAddress:
               Fn::ImportValue:
-                !Join ['-', [!Ref 'DataLakeStackName', 'Arn']]
+                !Join ['-', [!Ref 'DataLakeStackName', 'Address']]
   DNSRecord:
     Type: AWS::Route53::RecordSet
     Properties:

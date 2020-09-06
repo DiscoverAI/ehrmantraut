@@ -31,4 +31,4 @@ pipenv run start
 We've opted for the simplest setup for now: an EC2 instance deployed into a single private subnet with a Route53 record (`ehrmantraut.sars-cov-2.local`) pointing to the instance (which can be reached from anywhere on the VPC). This absolutely leaves room for improvement with scalability comes into play (e.g. ASGs, LBs, is Docker running?).
  
 ### Development
-In the RARE case that you need to interact with the deployed AWS EC2 instance, you can either port forward the application to your machine (`./go run-ehrmantraut`) which would be reachable at `localhost:9999` or start an AWS Sessions Manager session (`./go start-session`) which drops you into a bash shell.
+In the case that you need to interact with the deployed AWS EC2 instance, you can either port forward the application to your machine (`./go run-ehrmantraut`) which would be reachable at `localhost:9999` or start an AWS Sessions Manager session (`./go start-session`) which drops you into a bash shell.

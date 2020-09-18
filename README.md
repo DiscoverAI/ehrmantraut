@@ -1,4 +1,7 @@
 # Ehrmantraut
+
+[![Gitter](https://badges.gitter.im/discoverai/community.svg)](https://gitter.im/discoverai/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 > "You know, Walter, sometimes it doesn't hurt to have someone watching your back."
 >
 > -- Michael "Mike" Ehrmantraut (Breaking Bad)

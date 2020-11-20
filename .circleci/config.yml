@@ -13,7 +13,10 @@ jobs:
     steps:
       - checkout
       - run: mkdir image
-      - run: cp Dockerfile ./image/ && cp README.md ./image/
+      - run: |
+          cp Dockerfile ./image/
+          cp Pipfile ./image/
+          cp Pipfile.lock ./image/
       - persist_to_workspace:
           root: ~/repo/
           paths:

@@ -1,10 +1,11 @@
-FROM python:3.7
-RUN pip install pipenv
+FROM python:3.10-slim
 WORKDIR /usr/src/app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r ./requirements.txt
+
+ENV PYTHONPATH=/usr/src/app
 ENV USER="ehrmantraut"
-RUN adduser --disabled-password --home "$(pwd)" --no-create-home "$USER"
-COPY Pipfile Pipfile.lock ./
-RUN pipenv lock --requirements > requirements.txt && pip install -r ./requirements.txt
-RUN chown -R "$USER":"$USER" /usr/src/app
+RUN useradd -M -s /bin/bash "$USER" && chown -R "$USER":"$USER" /usr/src/app
 USER $USER
-CMD mlflow server --backend-store-uri ./mlflow --default-artifact-root $DATALAKE --host 0.0.0.0
+
+CMD ["mlflow", "server", "--backend-store-uri", "./mlflow", "--default-artifact-root", "$DATALAKE", "--host", "0.0.0.0"]

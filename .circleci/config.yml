@@ -3,20 +3,18 @@ version: 2.1
 python-docker-image: &python-docker-image
   working_directory: ~/repo
   docker:
-    - image: circleci/python:3.6
-      environment:
-        PIPENV_VENV_IN_PROJECT: true
+    - image: cimg/python:3.10
 
 jobs:
   build:
     <<: *python-docker-image
     steps:
       - checkout
+      - run: make requirements.txt
       - run: mkdir image
       - run: |
           cp Dockerfile ./image/
-          cp Pipfile ./image/
-          cp Pipfile.lock ./image/
+          cp requirements.txt ./image/
       - persist_to_workspace:
           root: ~/repo/
           paths:

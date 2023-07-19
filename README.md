@@ -9,7 +9,7 @@
 Experiment tracking for computational drug design.
 
 ## Prerequisites
-* Python >= 3.10, you can use for example [pyenv](https://github.com/pyenv/pyenv#installation) to manage that
+* Python >= 3.11, you can use for example [pyenv](https://github.com/pyenv/pyenv#installation) to manage that
 * [Poetry](https://python-poetry.org/docs/#installation)
 
 ## Install

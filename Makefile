@@ -17,6 +17,8 @@ for line in sys.stdin:
 endef
 export PRINT_HELP_PYSCRIPT
 
+DATALAKE ?= "s3://my-mlflow-bucket/"
+
 .PHONY: help
 help: ## Shows help for targets with help text
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
@@ -32,7 +34,7 @@ requirements.txt: ## Creates requirements.txt file
 
 .PHONY: run
 run: ## Starts the mlflow instance
-	poetry run mlflow server --backend-store-uri ./mlflow --default-artifact-root $DATALAKE --host 0.0.0.0
+	poetry run mlflow server --backend-store-uri ./mlflow --default-artifact-root $(DATALAKE) --host 0.0.0.0
 
 
 
